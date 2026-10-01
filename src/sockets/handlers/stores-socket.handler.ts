@@ -1,7 +1,8 @@
 import type { WebSocket } from "ws";
-import type { IStores } from "../interfaces/stores.interface";
+import type { AcceptOrderRequestData, IStores, RejectOrderRequestData } from "../interfaces/stores.interface";
 import { BaseSocketHandler } from "./base-socket.handler";
-
+import { OrderItemsStatus, type OrderItemAllocations, type Stores } from "../../utils/database/interface";
+import { database } from "../../utils/database";
 export class StoresSocketHandler extends BaseSocketHandler implements IStores {
   public storesSocket: Map<string, Set<WebSocket>> = new Map();
   public override socketHandlerName: string = 'StoresSocket';
@@ -26,11 +27,11 @@ export class StoresSocketHandler extends BaseSocketHandler implements IStores {
   }
 
 
-  async acceptOrderRequest(socket: WebSocket, data: any): Promise<void> {
+  async acceptOrderRequest(socket: WebSocket, data: AcceptOrderRequestData): Promise<void> {
 
   }
 
-  async rejectOrderRequest(socket: WebSocket, data: any): Promise<void> {
+  async rejectOrderRequest(socket: WebSocket, data: RejectOrderRequestData): Promise<void> {
 
   }
 
@@ -41,5 +42,28 @@ export class StoresSocketHandler extends BaseSocketHandler implements IStores {
     socket.on("order:reject-order", (data) => this.rejectOrderRequest(socket, data))
   }
 
+
+  private async SaveDataforAcceptOrder(data: AcceptOrderRequestData, storeId : number ) {
+
+    await database<OrderItemAllocations>("order_item_allocations").insert({
+      order_item_id: data.orderID,
+      store_id: storeId,
+      allocated_quantity: data.quantity,
+      status: OrderItemsStatus.PENDING,
+      price : 1000, // dummy data for now
+    });
+  }
+
+
+  private async findStoreIdofUser(id: string): Promise<number> {
+
+    const res = await database<Stores>("stores")
+      .leftJoin("users", "stores.owner_id", "users.id")
+      .where("users.uid", id)
+      .select("stores.id")
+      .first();
+    return res.id;
+
+  }
 
 }

@@ -4,3 +4,10 @@ export interface IDrivers {
   acceptDriverRequest(socket: WebSocket, data: any): Promise<void>;
   rejectDriverRequest(socket: WebSocket, data: any): Promise<void>;
 }
+
+
+export interface acceptDriverRequestData {
+
+
+
+}
