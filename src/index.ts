@@ -4,6 +4,11 @@ import { database } from "./utils/database";
 import { decodeToken, type TokenRequest } from "./utils/jsonwebtokenn/jwt";
 import type { JwtPayload } from "jsonwebtoken";
 import { SocketFactory } from "./sockets/factory/socket-factory";
+import { consumeQueue } from "./utils/rabbitmq";
+import {
+  RABBITMQ_QUEUES,
+  RABBITMQ_ROUTING_KEYS,
+} from "./constants/rabbitmq.constants";
 import type { BaseSocketHandler } from "./sockets/handlers/base-socket.handler";
 import type { Users } from "./utils/database/interface";
 const allowedorigins = ["http://localhost:5173"];
@@ -82,6 +87,20 @@ wss.on("connection", async (socket: WebSocket, request: IncomingMessage) => {
 });
 
 export { wss };
+
+void consumeQueue(
+  RABBITMQ_QUEUES.SOCKETS_ORDER_CREATED,
+  RABBITMQ_ROUTING_KEYS.ORDER_CREATED,
+  (msg) => {
+    const payload = JSON.stringify({
+      event: RABBITMQ_ROUTING_KEYS.ORDER_CREATED,
+      data: msg,
+    });
+    for (const client of wss.clients) {
+      if (client.readyState === WebSocket.OPEN) client.send(payload);
+    }
+  },
+).catch((err) => console.error("rabbitmq consume failed:", err));
 
 export const findRoleofUser = async (
   uid: string,

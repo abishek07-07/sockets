@@ -1,25 +1,14 @@
 services:
-  postgres:
-    image: postgres:16-alpine
-    env_file:
-      - .env
+  rabbitmq:
+    image: rabbitmq:4-management-alpine
+    ports:
+      - "${RABBITMQ_PORT:-5672}:5672"
+      - "${RABBITMQ_MANAGEMENT_PORT:-15672}:15672"
     environment:
-      POSTGRES_USER: ${DATABASE_USER}
-      POSTGRES_PASSWORD: ${DATABASE_PASSWORD}
-      POSTGRES_DB: ${DATABASE_NAME}
-    ports:
-      - "${DATABASE_PORT:-5432}:5432"
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-guest}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-guest}
     volumes:
-      - postgres_data:/var/lib/postgresql/data:z
-      - ./init.sql:/docker-entrypoint-initdb.d/init.sql:ro,z
-
-  redis:
-    image: redis:7-alpine
-    ports:
-      - "6379:6379"
-    volumes:
-      - redis_data:/data
+      - rabbitmq_data:/var/lib/rabbitmq
 
 volumes:
-  postgres_data:
-  redis_data:
+  rabbitmq_data:
